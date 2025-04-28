@@ -1,0 +1,26 @@
+[Unit]
+Description=Script Execution WebSocket Server
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/services/script-executor
+ExecStart=/opt/services/script-executor/target/release/script-executor
+Restart=on-failure
+RestartSec=5
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+# Needed because we're running as root but executing scripts as another user
+CapabilityBoundingSet=CAP_SETUID CAP_SETGID
+AmbientCapabilities=CAP_SETUID CAP_SETGID
+
+# Environment settings
+Environment=RUST_LOG=info
+
+[Install]
+WantedBy=multi-user.target

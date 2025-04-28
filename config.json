@@ -1,0 +1,8 @@
+{
+    "secret_key": "your_secret_key_here",
+    "admin_password_hash": "sha256_hashed_password_here",
+    "execution_user": "linux_user",
+    "bind_address": "0.0.0.0",
+    "port": 8000,
+    "static_dir": "./static"
+}

@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Script Executor</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --bg-color: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1, h2, h3 {
+            color: var(--secondary-color);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+
+        .btn-danger {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        .token-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .token-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .terminal {
+            background-color: #1e1e1e;
+            color: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+            white-space: pre-wrap;
+        }
+        
+        .terminal .error-text {
+            color: var(--error-color);
+        }
+
+        .tab-container {
+            margin-top: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .tab.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .status-error {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .flex-col {
+            flex-direction: column;
+        }
+
+        .gap-2 {
+            gap: 10px;
+        }
+
+        .items-center {
+            align-items: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .mt-4 {
+            margin-top: 20px;
+        }
+
+        .badge {
+            background-color: #eee;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Script Executor</h1>
+            <div>
+                <span id="auth-status" class="status status-error">Not Authenticated</span>
+                <button id="logout-btn" class="btn btn-danger hidden">Logout</button>
+            </div>
+        </div>
+
+        <div class="tab-container">
+            <div class="tabs">
+                <div class="tab active" data-tab="tokens">Tokens</div>
+                <div class="tab" data-tab="execute">Execute Script</div>
+                <div class="tab" data-tab="generate">Generate Token</div>
+            </div>
+
+            <!-- Tokens Tab -->
+            <div id="tokens-tab" class="tab-content active">
+                <div class="card">
+                    <h2>Your Tokens</h2>
+                    <p>Manage your stored script tokens.</p>
+
+                    <div id="token-list-container">
+                        <ul id="token-list" class="token-list"></ul>
+                    </div>
+
+                    <div class="flex gap-2 mt-4">
+                        <input type="text" id="new-token" placeholder="Enter a Branca token">
+                        <input type="text" id="token-name" placeholder="Give this token a name (optional)">
+                        <button id="add-token-btn" class="btn btn-primary">Add Token</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Execute Tab -->
+            <div id="execute-tab" class="tab-content">
+                <div class="card">
+                    <h2>Execute Script</h2>
+                    <p>Run a script using one of your tokens.</p>
+
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <select id="token-select" style="flex-grow: 1; padding: 10px; margin-right: 10px;">
+                                <option value="">Select a token</option>
+                            </select>
+                            <button id="run-script-btn" class="btn btn-success">Run Script</button>
+                        </div>
+
+                        <div id="script-info" class="hidden">
+                            <p><strong>Script Path:</strong> <span id="script-path"></span></p>
+                        </div>
+
+                        <div id="terminal-container" class="hidden">
+                            <h3>Script Output</h3>
+                            <div id="terminal" class="terminal"></div>
+                            <div class="flex justify-between mt-4">
+                                <button id="clear-output-btn" class="btn btn-primary">Clear Output</button>
+                                <button id="stop-script-btn" class="btn btn-danger">Stop Script</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generate Tab -->
+            <div id="generate-tab" class="tab-content">
+                <div id="auth-card" class="card">
+                    <h2>Authentication Required</h2>
+                    <p>Please authenticate to generate new tokens.</p>
+
+                    <div class="flex flex-col gap-2">
+                        <input type="password" id="auth-password" placeholder="Enter admin password">
+                        <button id="auth-btn" class="btn btn-primary">Authenticate</button>
+                    </div>
+                </div>
+
+                <div id="generate-card" class="card hidden">
+                    <h2>Generate New Token</h2>
+                    <p>Create a new token for script execution.</p>
+
+                    <div class="flex flex-col gap-2">
+                        <input type="text" id="script-path-input" placeholder="Enter script path (e.g., /home/user/scripts/myscript.sh)">
+                        <button id="generate-token-btn" class="btn btn-success">Generate Token</button>
+
+                        <div id="new-token-result" class="hidden">
+                            <h3>Your New Token</h3>
+                            <div class="flex items-center justify-between">
+                                <input type="text" id="generated-token" readonly>
+                                <button id="copy-token-btn" class="btn btn-primary">Copy</button>
+                                <button id="save-token-btn" class="btn btn-success">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const tokenList = document.getElementById('token-list');
+        const tokenSelect = document.getElementById('token-select');
+        const newTokenInput = document.getElementById('new-token');
+        const tokenNameInput = document.getElementById('token-name');
+        const addTokenBtn = document.getElementById('add-token-btn');
+        const runScriptBtn = document.getElementById('run-script-btn');
+        const scriptInfoDiv = document.getElementById('script-info');
+        const scriptPathEl = document.getElementById('script-path');
+        const terminalContainer = document.getElementById('terminal-container');
+        const terminal = document.getElementById('terminal');
+        const clearOutputBtn = document.getElementById('clear-output-btn');
+        const stopScriptBtn = document.getElementById('stop-script-btn');
+        const authPasswordInput = document.getElementById('auth-password');
+        const authBtn = document.getElementById('auth-btn');
+        const authStatus = document.getElementById('auth-status');
+        const logoutBtn = document.getElementById('logout-btn');
+        const authCard = document.getElementById('auth-card');
+        const generateCard = document.getElementById('generate-card');
+        const scriptPathInput = document.getElementById('script-path-input');
+        const generateTokenBtn = document.getElementById('generate-token-btn');
+        const newTokenResult = document.getElementById('new-token-result');
+        const generatedTokenInput = document.getElementById('generated-token');
+        const copyTokenBtn = document.getElementById('copy-token-btn');
+        const saveTokenBtn = document.getElementById('save-token-btn');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        // State
+        let tokens = JSON.parse(localStorage.getItem('scriptTokens') || '{}');
+        let websocket = null;
+        let isAuthenticated = false;
+
+        // Initialize
+        function init() {
+            loadTokens();
+            setupEventListeners();
+            checkAuthStatus();
+        }
+
+        // Check authentication status
+        function checkAuthStatus() {
+            isAuthenticated = localStorage.getItem('authenticated') === 'true';
+            if (isAuthenticated) {
+                authStatus.textContent = 'Authenticated';
+                authStatus.className = 'status status-success';
+                logoutBtn.classList.remove('hidden');
+                authCard.classList.add('hidden');
+                generateCard.classList.remove('hidden');
+            } else {
+                authStatus.textContent = 'Not Authenticated';
+                authStatus.className = 'status status-error';
+                logoutBtn.classList.add('hidden');
+                authCard.classList.remove('hidden');
+                generateCard.classList.add('hidden');
+            }
+        }
+
+        // Load tokens from localStorage
+        function loadTokens() {
+            tokenList.innerHTML = '';
+            tokenSelect.innerHTML = '<option value="">Select a token</option>';
+            
+            Object.entries(tokens).forEach(([name, token]) => {
+                // Add to token list
+                const li = document.createElement('li');
+                li.className = 'token-item';
+                li.innerHTML = `
+                    <div>${name}</div>
+                    <div>
+                        <button class="btn btn-primary verify-btn" data-token="${token}">Verify</button>
+                        <button class="btn btn-danger delete-btn" data-name="${name}">Delete</button>
+                    </div>
+                `;
+                tokenList.appendChild(li);
+
+                // Add to select dropdown
+                const option = document.createElement('option');
+                option.value = token;
+                option.textContent = name;
+                tokenSelect.appendChild(option);
+            });
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(`${tabName}-tab`).classList.add('active');
+                });
+            });
+
+            // Add token
+            addTokenBtn.addEventListener('click', async () => {
+                const token = newTokenInput.value.trim();
+                const name = tokenNameInput.value.trim() || `Token ${Object.keys(tokens).length + 1}`;
+                
+                if (!token) {
+                    alert('Please enter a valid token');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/verify_token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(token)
+                    });
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        tokens[name] = token;
+                        localStorage.setItem('scriptTokens', JSON.stringify(tokens));
+                        loadTokens();
+                        newTokenInput.value = '';
+                        tokenNameInput.value = '';
+                        alert('Token added successfully!');
+                    } else {
+                        alert(`Invalid token: ${data.error}`);
+                    }
+                } catch (error) {
+                    alert(`Error verifying token: ${error.message}`);
+                }
+            });
+
+            // Token list event delegation
+            tokenList.addEventListener('click', async (e) => {
+                // Verify button
+                if (e.target.classList.contains('verify-btn')) {
+                    const token = e.target.getAttribute('data-token');
+                    try {
+                        const response = await fetch('/api/verify_token', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(token)
+                        });
+
+                        const data = await response.json();
+                        if (response.ok) {
+                            alert(`Valid token for script: ${data.script}`);
+                        } else {
+                            alert(`Invalid token: ${data.error}`);
+                        }
+                    } catch (error) {
+                        alert(`Error verifying token: ${error.message}`);
+                    }
+                }
+
+                // Delete button
+                if (e.target.classList.contains('delete-btn')) {
+                    const name = e.target.getAttribute('data-name');
+                    if (confirm(`Are you sure you want to delete token "${name}"?`)) {
+                        delete tokens[name];
+                        localStorage.setItem('scriptTokens', JSON.stringify(tokens));
+                        loadTokens();
+                    }
+                }
+            });
+
+            // Run script
+            runScriptBtn.addEventListener('click', async () => {
+                const token = tokenSelect.value;
+                if (!token) {
+                    alert('Please select a token');
+                    return;
+                }
+
+                try {
+                    // First verify the token
+                    const response = await fetch('/api/verify_token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(token)
+                    });
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        scriptPathEl.textContent = data.script;
+                        scriptInfoDiv.classList.remove('hidden');
+                        terminalContainer.classList.remove('hidden');
+                        terminal.innerHTML = '';
+                        
+                        // Connect to WebSocket
+                        connectWebSocket(token);
+                    } else {
+                        alert(`Invalid token: ${data.error}`);
+                    }
+                } catch (error) {
+                    alert(`Error verifying token: ${error.message}`);
+                }
+            });
+
+            // Clear output
+            clearOutputBtn.addEventListener('click', () => {
+                terminal.innerHTML = '';
+            });
+
+            // Stop script
+            stopScriptBtn.addEventListener('click', () => {
+                if (websocket) {
+                    websocket.close();
+                    websocket = null;
+                    terminal.innerHTML += '\n[Connection closed]';
+                }
+            });
+
+            // Authentication
+            authBtn.addEventListener('click', async () => {
+                const password = authPasswordInput.value;
+                if (!password) {
+                    alert('Please enter the admin password');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/authenticate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok && data.success) {
+                        localStorage.setItem('authenticated', 'true');
+                        checkAuthStatus();
+                        authPasswordInput.value = '';
+                        alert('Authentication successful!');
+                    } else {
+                        alert('Authentication failed: ' + (data.error || 'Invalid password'));
+                    }
+                } catch (error) {
+                    alert(`Authentication error: ${error.message}`);
+                }
+            });
+
+            // Logout
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('authenticated');
+                checkAuthStatus();
+            });
+
+            // Generate token
+            generateTokenBtn.addEventListener('click', async () => {
+                const scriptPath = scriptPathInput.value.trim();
+                if (!scriptPath) {
+                    alert('Please enter a script path');
+                    return;
+                }
+
+                // Add a password input for generation
+                const password = prompt("Please enter your admin password to generate a token:");
+                if (!password) {
+                    alert('Password is required to generate tokens');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/generate_token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            password: password,
+                            script: scriptPath
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        generatedTokenInput.value = data.token;
+                        newTokenResult.classList.remove('hidden');
+                    } else {
+                        alert(`Failed to generate token: ${data.error}`);
+                    }
+                } catch (error) {
+                    alert(`Error generating token: ${error.message}`);
+                }
+            });
+
+            // Copy token
+            copyTokenBtn.addEventListener('click', () => {
+                generatedTokenInput.select();
+                document.execCommand('copy');
+                alert('Token copied to clipboard!');
+            });
+
+            // Save generated token
+            saveTokenBtn.addEventListener('click', () => {
+                const token = generatedTokenInput.value;
+                const name = prompt('Enter a name for this token', `Token ${Object.keys(tokens).length + 1}`);
+                
+                if (name) {
+                    tokens[name] = token;
+                    localStorage.setItem('scriptTokens', JSON.stringify(tokens));
+                    loadTokens();
+                    alert('Token saved successfully!');
+                }
+            });
+        }
+
+        // Connect to WebSocket for script execution
+        function connectWebSocket(token) {
+            if (websocket) {
+                websocket.close();
+            }
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/api/execute/${token}`;
+            
+            websocket = new WebSocket(wsUrl);
+            
+            websocket.onopen = () => {
+                terminal.innerHTML += '> Connection established. Running script...\n';
+                
+                // Send ping every 30 seconds to keep connection alive
+                setInterval(() => {
+                    if (websocket && websocket.readyState === WebSocket.OPEN) {
+                        websocket.send('ping');
+                    }
+                }, 30000);
+            };
+            
+            websocket.onmessage = (event) => {
+                if (event.data === 'pong') return;
+                
+                const line = event.data;
+                
+                // Check if line starts with "ERR: " and apply error styling
+                if (line.startsWith("ERR: ")) {
+                    const errorMessage = line.substring(5); // Remove "ERR: " prefix
+                    const errorElement = document.createElement('div');
+                    errorElement.className = 'error-text';
+                    errorElement.textContent = errorMessage;
+                    terminal.appendChild(errorElement);
+                } else {
+                    terminal.innerHTML += line + '\n';
+                }
+                
+                terminal.scrollTop = terminal.scrollHeight; // Auto-scroll to bottom
+            };
+            
+            websocket.onclose = () => {
+                terminal.innerHTML += '\n> Connection closed.\n';
+                websocket = null;
+            };
+            
+            websocket.onerror = (error) => {
+                terminal.innerHTML += `\n> WebSocket error: ${error}\n`;
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        // Initialize the app
+        init();
+    </script>
+</body>
+</html>
