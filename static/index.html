@@ -242,7 +242,6 @@
 
                     <div class="flex gap-2 mt-4">
                         <input type="text" id="new-token" placeholder="Enter a Branca token">
-                        <input type="text" id="token-name" placeholder="Give this token a name (optional)">
                         <button id="add-token-btn" class="btn btn-primary">Add Token</button>
                     </div>
                 </div>
@@ -317,7 +316,6 @@
         const tokenList = document.getElementById('token-list');
         const tokenSelect = document.getElementById('token-select');
         const newTokenInput = document.getElementById('new-token');
-        const tokenNameInput = document.getElementById('token-name');
         const addTokenBtn = document.getElementById('add-token-btn');
         const runScriptBtn = document.getElementById('run-script-btn');
         const scriptInfoDiv = document.getElementById('script-info');
@@ -355,7 +353,7 @@
 
         // Check authentication status
         function checkAuthStatus() {
-            isAuthenticated = localStorage.getItem('authenticated') === 'true';
+            isAuthenticated = localStorage.getItem('adminPassword') !== null;
             if (isAuthenticated) {
                 authStatus.textContent = 'Authenticated';
                 authStatus.className = 'status status-success';
@@ -383,7 +381,6 @@
                 li.innerHTML = `
                     <div>${name}</div>
                     <div>
-                        <button class="btn btn-primary verify-btn" data-token="${token}">Verify</button>
                         <button class="btn btn-danger delete-btn" data-name="${name}">Delete</button>
                     </div>
                 `;
@@ -413,7 +410,6 @@
             // Add token
             addTokenBtn.addEventListener('click', async () => {
                 const token = newTokenInput.value.trim();
-                const name = tokenNameInput.value.trim() || `Token ${Object.keys(tokens).length + 1}`;
                 
                 if (!token) {
                     alert('Please enter a valid token');
@@ -429,6 +425,7 @@
 
                     const data = await response.json();
                     if (response.ok) {
+                        const name = data.script;
                         tokens[name] = token;
                         localStorage.setItem('scriptTokens', JSON.stringify(tokens));
                         loadTokens();
@@ -445,26 +442,6 @@
 
             // Token list event delegation
             tokenList.addEventListener('click', async (e) => {
-                // Verify button
-                if (e.target.classList.contains('verify-btn')) {
-                    const token = e.target.getAttribute('data-token');
-                    try {
-                        const response = await fetch('/api/verify_token', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(token)
-                        });
-
-                        const data = await response.json();
-                        if (response.ok) {
-                            alert(`Valid token for script: ${data.script}`);
-                        } else {
-                            alert(`Invalid token: ${data.error}`);
-                        }
-                    } catch (error) {
-                        alert(`Error verifying token: ${error.message}`);
-                    }
-                }
 
                 // Delete button
                 if (e.target.classList.contains('delete-btn')) {
@@ -541,7 +518,7 @@
 
                     const data = await response.json();
                     if (response.ok && data.success) {
-                        localStorage.setItem('authenticated', 'true');
+                        localStorage.setItem('adminPassword', password);
                         checkAuthStatus();
                         authPasswordInput.value = '';
                         alert('Authentication successful!');
@@ -555,7 +532,7 @@
 
             // Logout
             logoutBtn.addEventListener('click', () => {
-                localStorage.removeItem('authenticated');
+                localStorage.removeItem('adminPassword');
                 checkAuthStatus();
             });
 
@@ -567,12 +544,7 @@
                     return;
                 }
 
-                // Add a password input for generation
-                const password = prompt("Please enter your admin password to generate a token:");
-                if (!password) {
-                    alert('Password is required to generate tokens');
-                    return;
-                }
+                const password = localStorage.getItem('adminPassword');
 
                 try {
                     const response = await fetch('/api/generate_token', {
@@ -601,19 +573,6 @@
                 generatedTokenInput.select();
                 document.execCommand('copy');
                 alert('Token copied to clipboard!');
-            });
-
-            // Save generated token
-            saveTokenBtn.addEventListener('click', () => {
-                const token = generatedTokenInput.value;
-                const name = prompt('Enter a name for this token', `Token ${Object.keys(tokens).length + 1}`);
-                
-                if (name) {
-                    tokens[name] = token;
-                    localStorage.setItem('scriptTokens', JSON.stringify(tokens));
-                    loadTokens();
-                    alert('Token saved successfully!');
-                }
             });
         }
 
