@@ -57,11 +57,6 @@ impl Actor for OutputSession {
     fn started(&mut self, ctx: &mut Self::Context) {
         let script_path = self.script_path.clone();
         let user = self.user.clone();
-        if !script_path.starts_with('/') && !script_path.starts_with("./") {
-            ctx.text("Invalid script path");
-            ctx.stop();
-            return;
-        }
 
         let addr = ctx.address();
 
