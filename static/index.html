@@ -302,7 +302,6 @@
                             <div class="flex items-center justify-between">
                                 <input type="text" id="generated-token" readonly>
                                 <button id="copy-token-btn" class="btn btn-primary">Copy</button>
-                                <button id="save-token-btn" class="btn btn-success">Save</button>
                             </div>
                         </div>
                     </div>
@@ -430,7 +429,6 @@
                         localStorage.setItem('scriptTokens', JSON.stringify(tokens));
                         loadTokens();
                         newTokenInput.value = '';
-                        tokenNameInput.value = '';
                         alert('Token added successfully!');
                     } else {
                         alert(`Invalid token: ${data.error}`);
